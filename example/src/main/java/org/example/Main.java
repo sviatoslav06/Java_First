@@ -18,9 +18,120 @@ public class Main {
         String strConn = "jdbc:mariadb://"+host+":"+port+"/"+database;
         //createCategory(strConn, userName, password);
         //insertCategory(strConn, userName, password);
+
+        int q = 1;
+        Scanner input = new Scanner(System.in);
+        while (q != 0){
+            System.out.println("Що ви хочете зробити?");
+            System.out.println("1 - Вивести список категорій");
+            System.out.println("2 - Додати категорію");
+            System.out.println("3 - Редагувати категорію");
+            System.out.println("4 - Видалити категорію");
+            System.out.println("0 - Вихід");
+            q = input.nextInt();
+
+            switch (q) {
+                case 1:
+                    System.out.println("Список категорій");
+                    var list = listCategories(strConn, userName, password);
+                    for (var c : list) {
+                        System.out.println("-----" + c.getId() + "-----");
+                        System.out.println("Назва: " + c.getName());
+                        System.out.println("Опис: " + c.getDescription());
+                    }
+                    break;
+                case 2:
+                    insertCategory(strConn, userName, password);
+                    break;
+                case 3:
+                    editCategory(strConn, userName, password);
+                    break;
+                case 4:
+                    deleteCategory(strConn, userName, password);
+                    break;
+                case 0:
+                    System.out.println("До зустрічі!");
+                    break;
+                default:
+                    System.out.println("Щось пішло не так...");
+            }
+        }
+    }
+
+    private static void deleteCategory(String strConn, String userName, String password) {
+        Scanner input = new Scanner(System.in);
+        System.out.println("Список категорій");
         var list = listCategories(strConn, userName, password);
-        for (var c : list){
-            System.out.println(c);
+        for (var c : list) {
+            System.out.println("-----" + c.getId() + "-----");
+            System.out.println("Назва: " + c.getName());
+            System.out.println("Опис: " + c.getDescription());
+        }
+        int c = 1;
+        while (c < list.size() || c > list.size()) {
+            System.out.println("Введіть номер категорії яку ви хочете видалити: ");
+            c = input.nextInt();
+            input.nextLine();
+        }
+        try(Connection conn = DriverManager.getConnection(strConn, userName, password)) {
+            String sql = "DELETE FROM categories WHERE id = ?";
+            PreparedStatement preparedStatement = conn.prepareStatement(sql);
+            preparedStatement.setInt(1, c);
+
+            int rowsAffected = preparedStatement.executeUpdate();
+
+            preparedStatement.close();
+
+            System.out.println("Видалено рядків: " + rowsAffected);
+            System.out.println("Категорія видалена успішно.");
+        }
+        catch(Exception ex) {
+            System.out.println("Помилка видалення категорії: " + ex.getMessage());
+        }
+    }
+
+    private static void editCategory(String strConn, String userName, String password){
+        System.out.println("Список категорій");
+        var list = listCategories(strConn, userName, password);
+        for (var c : list) {
+            System.out.println("-----" + c.getId() + "-----");
+            System.out.println("Назва: " + c.getName());
+            System.out.println("Опис: " + c.getDescription());
+        }
+        Scanner input = new Scanner(System.in);
+        int c = 1;
+        while (c < list.size() || c > list.size()) {
+            System.out.println("Введіть номер категорії яку ви хочете відредагувати: ");
+            c = input.nextInt();
+            input.nextLine();
+        }
+        input.nextLine();
+        try(Connection conn = DriverManager.getConnection(strConn, userName, password)) {
+            Statement statement = conn.createStatement();
+
+            CategoryItem categoryToUpdate = new CategoryItem();
+            categoryToUpdate.setId(c);
+            System.out.println("Вкажіть нову назву категорії: ");
+            categoryToUpdate.setName(input.nextLine());
+            System.out.println("Вкажіть новий опис категорії: ");
+            categoryToUpdate.setDescription(input.nextLine());
+
+            String updateQuery = "UPDATE categories SET name = ?, description = ? WHERE id = ?";
+            PreparedStatement preparedStatement = conn.prepareStatement(updateQuery);
+
+            preparedStatement.setInt(3, categoryToUpdate.getId());
+            preparedStatement.setString(1, categoryToUpdate.getName());
+            preparedStatement.setString(2, categoryToUpdate.getDescription());
+
+            int rowsAffected = preparedStatement.executeUpdate();
+
+            preparedStatement.close();
+
+            System.out.println("Додано рядків: " + rowsAffected);
+            System.out.println("Категорія відредагована успішно.");
+        }
+        catch(Exception ex) {
+            System.out.println("Помилка редагування категорії: " + ex.getMessage());
         }
     }
 
@@ -58,9 +169,9 @@ public class Main {
     private static void insertCategory(String strConn, String userName, String password) {
         Scanner input = new Scanner(System.in);
         CategoryCreate categoryCreate = new CategoryCreate();
-        System.out.println("Вкажіть назву категорії");
+        System.out.println("Вкажіть назву категорії: ");
         categoryCreate.setName(input.nextLine());
-        System.out.println("Вкажіть опис категорії");
+        System.out.println("Вкажіть опис категорії: ");
         categoryCreate.setDescription(input.nextLine());
 
         try(Connection conn = DriverManager.getConnection(strConn, userName, password)) {
